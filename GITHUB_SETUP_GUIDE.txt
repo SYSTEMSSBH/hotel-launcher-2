@@ -1,0 +1,157 @@
+# GitHub Actions Setup Guide
+# Hotel Launcher — Auto-Build APK
+
+Follow these steps once and you'll never need Android Studio to build the APK again.
+Every time you upload a file change to GitHub, it automatically builds and signs the APK
+ready for you to download and upload to Intune.
+
+---
+
+## PART 1 — First Time Setup (Do this once)
+
+### Step 1 — Create a GitHub Account
+1. Go to https://github.com
+2. Click Sign Up and create a free account
+3. Verify your email address
+
+---
+
+### Step 2 — Create a Private Repository
+1. Log into GitHub
+2. Click the + button top right → New repository
+3. Fill in:
+   - Repository name: hotel-launcher
+   - Description: Hotel Operations Launcher App
+   - Set to: PRIVATE  ← important
+   - Leave everything else as default
+4. Click Create repository
+
+---
+
+### Step 3 — Upload the Project Files
+1. On your new empty repository page, click "uploading an existing file"
+2. Open your hotel-launcher folder on your computer
+3. Select ALL files and folders inside it and drag them into the GitHub upload area
+4. Important: make sure you can see the .github folder — if Windows is hiding it,
+   open File Explorer → View → check "Hidden items"
+5. Scroll down, add a commit message like "Initial upload"
+6. Click Commit changes
+7. Wait for the upload to finish
+
+---
+
+### Step 4 — Get Your Keystore Ready
+You need to convert your keystore file (created in Android Studio) to Base64.
+The keystore file is called something like hotel-launcher.jks or hotel-launcher.keystore
+
+On Windows — open PowerShell and run:
+   [Convert]::ToBase64String([IO.File]::ReadAllBytes("C:\path\to\your\keystore.jks")) | clip
+
+This copies the Base64 string to your clipboard. Paste it somewhere temporarily (like Notepad).
+
+---
+
+### Step 5 — Add Your Secrets to GitHub
+This is where you securely store your signing credentials.
+GitHub encrypts these — nobody can ever read them, not even you after saving.
+
+1. Go to your repository on GitHub
+2. Click Settings (top tab)
+3. Click Secrets and variables → Actions (left sidebar)
+4. Click New repository secret — add each of these 4 secrets:
+
+   Secret 1:
+   Name:  KEYSTORE_BASE64
+   Value: (paste the Base64 string from Step 4)
+
+   Secret 2:
+   Name:  KEYSTORE_PASSWORD
+   Value: (the password you set when creating the keystore in Android Studio)
+
+   Secret 3:
+   Name:  KEY_ALIAS
+   Value: (the alias you set when creating the keystore — default is usually "key0")
+
+   Secret 4:
+   Name:  KEY_PASSWORD
+   Value: (the key password — usually the same as KEYSTORE_PASSWORD)
+
+5. Click Add secret after each one
+
+---
+
+### Step 6 — Trigger Your First Build
+1. Go to your repository → click the Actions tab
+2. You should see "Build Hotel Launcher APK" in the left list
+3. Click it → click Run workflow → click the green Run workflow button
+4. A build will start — the circle turns orange while running, green when done
+5. First build takes about 5-8 minutes (downloads dependencies)
+6. Future builds take about 2-3 minutes (cached)
+
+---
+
+### Step 7 — Download Your APK
+1. Click the completed build (green checkmark)
+2. Scroll to the bottom of the build page
+3. Under Artifacts, click HotelLauncher-signed
+4. This downloads a zip containing your signed APK
+5. Unzip it — inside is the APK file ready for Intune
+
+---
+
+## PART 2 — Every Time You Update the App
+
+This is all you need to do for future updates:
+
+1. Make whatever changes you need (new URL, new logo etc)
+2. Go to your GitHub repository in a browser
+3. Navigate to the file you want to update
+4. Click the pencil (edit) icon
+5. Make your change
+6. Click Commit changes
+7. GitHub automatically starts a new build
+8. Wait 2-3 minutes → download the new APK from the Actions tab
+9. Upload the new APK to Intune
+
+OR if updating multiple files:
+1. Go to your repository
+2. Click Add file → Upload files
+3. Drag in your updated files
+4. Click Commit changes
+5. Build starts automatically
+
+---
+
+## PART 3 — Getting the APK into Intune
+
+1. Download the signed APK from GitHub Actions (Artifacts)
+2. Log into endpoint.microsoft.com
+3. Apps → Android → Add
+4. App type: Line-of-business app
+5. Upload your APK
+6. Fill in name: Hotel Launcher, Publisher: Your Hotel Name
+7. Assignments → Add group → select your tablet group
+8. Assignment type: Required (auto-installs silently)
+9. Save
+
+---
+
+## Troubleshooting
+
+Build failed — red X on Actions tab:
+→ Click the failed build → click the failed step to see the error
+→ Most common cause: keystore secrets entered incorrectly — double check Step 5
+
+Can't see .github folder on Windows:
+→ File Explorer → View → Options → View tab → Show hidden files and folders
+
+Key alias not sure what it is:
+→ In Android Studio: Build → Generate Signed APK → open your keystore
+  → the alias is listed there
+
+---
+
+## Summary
+
+After setup, your workflow is simply:
+CHANGE FILE ON GITHUB → APK BUILDS AUTOMATICALLY → DOWNLOAD → UPLOAD TO INTUNE
